@@ -1,0 +1,130 @@
+const Joi = require('joi');
+
+// Common validation schemas
+const customerSchema = Joi.object({
+  type: Joi.string().valid('INDIVIDUAL').required(),
+  reference_id: Joi.string().min(1).max(255).required(),
+  email: Joi.string().email().min(4).max(50).optional(),
+  mobile_number: Joi.string().min(1).max(50).optional(),
+  individual_detail: Joi.object().optional()
+});
+
+const itemSchema = Joi.object({
+  name: Joi.string().min(1).max(256).required(),
+  quantity: Joi.number().integer().min(1).max(510000).required(),
+  price: Joi.number().min(0).required(),
+  category: Joi.string().optional(),
+  url: Joi.string().uri().optional()
+});
+
+const shippingInfoSchema = Joi.object({
+  // Define based on Xendit docs if needed
+});
+
+const metadataSchema = Joi.object().pattern(
+  Joi.string().min(1).max(40),
+  Joi.string().min(1).max(500)
+).max(50);
+
+// Payment Request schemas
+const createPaymentRequestSchema = Joi.object({
+  reference_id: Joi.string().min(1).max(255).required(),
+  type: Joi.string().valid('PAY', 'PAY_AND_SAVE', 'REUSABLE_PAYMENT_CODE').required(),
+  country: Joi.string().valid('ID', 'PH', 'VN', 'TH', 'SG', 'MY').required(),
+  currency: Joi.string().valid('IDR', 'PHP', 'VND', 'THB', 'SGD', 'MYR', 'USD').required(),
+  channel_code: Joi.string().required(),
+  channel_properties: Joi.object().required(),
+  request_amount: Joi.number().min(0).required(),
+  capture_method: Joi.string().valid('AUTOMATIC', 'MANUAL').default('AUTOMATIC'),
+  description: Joi.string().min(1).max(1000).optional(),
+  customer_id: Joi.string().max(41).optional(),
+  customer: customerSchema.optional(),
+  items: Joi.array().items(itemSchema).optional(),
+  shipping_information: shippingInfoSchema.optional(),
+  metadata: metadataSchema.optional()
+});
+
+const cancelPaymentRequestSchema = Joi.object({
+  // No body required for cancel
+});
+
+const simulatePaymentRequestSchema = Joi.object({
+  amount: Joi.number().min(0).optional()
+});
+
+// Payment schemas
+const capturePaymentSchema = Joi.object({
+  capture_amount: Joi.number().min(0).required()
+});
+
+// Invoice schemas
+const createInvoiceSchema = Joi.object({
+  external_id: Joi.string().min(1).max(255).required(),
+  amount: Joi.number().min(0).required(),
+  description: Joi.string().min(1).optional(),
+  invoice_duration: Joi.number().min(1).max(31536000).default(86400),
+  customer: Joi.object({
+    given_names: Joi.string().optional(),
+    surname: Joi.string().optional(),
+    email: Joi.string().email().optional(),
+    mobile_number: Joi.string().optional(),
+    addresses: Joi.array().items(Joi.object()).optional()
+  }).optional(),
+  customer_notification_preference: Joi.object({
+    invoice_created: Joi.array().items(Joi.string().valid('whatsapp', 'email', 'viber')).optional(),
+    invoice_reminder: Joi.array().items(Joi.string().valid('whatsapp', 'email', 'viber')).optional(),
+    invoice_paid: Joi.array().items(Joi.string().valid('whatsapp', 'email', 'viber')).optional()
+  }).optional(),
+  success_redirect_url: Joi.string().uri().min(1).max(255).optional(),
+  failure_redirect_url: Joi.string().uri().min(1).max(255).optional(),
+  currency: Joi.string().valid('IDR', 'PHP', 'THB', 'VND', 'MYR').optional(),
+  items: Joi.array().items(Joi.object({
+    name: Joi.string().max(256).required(),
+    quantity: Joi.number().min(1).max(510000).required(),
+    price: Joi.number().required(),
+    category: Joi.string().optional(),
+    url: Joi.string().uri().optional()
+  })).optional(),
+  fees: Joi.array().items(Joi.object({
+    type: Joi.string().required(),
+    value: Joi.number().required()
+  })).optional(),
+  payment_methods: Joi.array().items(Joi.string()).optional(),
+  channel_properties: Joi.object().optional(),
+  metadata: metadataSchema.optional()
+});
+
+const listInvoicesSchema = Joi.object({
+  external_id: Joi.string().optional(),
+  statuses: Joi.array().items(Joi.string().valid('PENDING', 'PAID', 'SETTLED', 'EXPIRED')).optional(),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+  created_after: Joi.string().isoDate().optional(),
+  created_before: Joi.string().isoDate().optional(),
+  paid_after: Joi.string().isoDate().optional(),
+  paid_before: Joi.string().isoDate().optional(),
+  expired_after: Joi.string().isoDate().optional(),
+  expired_before: Joi.string().isoDate().optional(),
+  last_invoice_id: Joi.string().optional(),
+  client_types: Joi.array().items(Joi.string().valid('API_GATEWAY', 'DASHBOARD', 'INTEGRATION', 'ON_DEMAND', 'RECURRING', 'MOBILE')).optional(),
+  payment_channels: Joi.array().items(Joi.string()).optional(),
+  on_demand_link: Joi.string().optional(),
+  recurring_payment_id: Joi.string().optional()
+});
+
+// Webhook schema
+const webhookSchema = Joi.object({
+  event: Joi.string().valid('payment.capture', 'payment.authorization', 'payment.failure').required(),
+  business_id: Joi.string().required(),
+  created: Joi.string().isoDate().required(),
+  data: Joi.object().required()
+});
+
+module.exports = {
+  createPaymentRequestSchema,
+  cancelPaymentRequestSchema,
+  simulatePaymentRequestSchema,
+  capturePaymentSchema,
+  createInvoiceSchema,
+  listInvoicesSchema,
+  webhookSchema
+};

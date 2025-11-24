@@ -1,0 +1,183 @@
+# Xendit Payment API - Curl Test Commands
+# Copy and paste these commands directly into your terminal
+# Make sure your server is running (npm run dev)
+#
+# IMPORTANT: Idempotency-Key headers must be valid UUIDs
+# Example: 123e4567-e89b-12d3-a456-426614174000
+# You can generate new UUIDs with: uuidgen (Linux/Mac) or online UUID generators
+#
+# NOTE: Channel codes depend on your Xendit account configuration
+# Different channel codes require different channel_properties:
+#
+# Philippine channel codes:
+# - PAYMAYA: requires success_return_url, failure_return_url, cancel_return_url
+# - GRABPAY: requires success_return_url, failure_return_url, cancel_return_url
+# - GCASH: requires success_return_url, failure_return_url, cancel_return_url
+# - 7ELEVEN: requires (usually empty object {})
+#
+# Indonesian channel codes:
+# - QRIS: requires (usually empty object {})
+# - DANA, OVO, GOPAY, LINKAJA, SHOPEEPAY: require success_return_url, failure_return_url
+#
+# Contact Xendit support for your account's available channel codes and required properties
+
+# ==========================================
+# HEALTH CHECK
+# ==========================================
+curl http://localhost:3000/health
+
+# ==========================================
+# PAYMENT REQUESTS
+# ==========================================
+
+# Create Payment Request
+curl -X POST http://localhost:3002/api/v1/payment-requests \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 123e4567-e89b-12d3-a456-426614174002" \
+  -d '{
+    "reference_id": "test-order-123",
+    "type": "PAY",
+    "country": "PH",
+    "currency": "PHP",
+    "channel_code": "PAYMAYA",
+    "channel_properties": {
+        "success_return_url": "https://your-app.com/payment/success",
+        "failure_return_url": "https://your-app.com/payment/failed",
+        "cancel_return_url": "https://your-app.com/payment/cancelled"
+    },
+    "request_amount": 500,
+    "description": "Test payment for API testing"
+  }'
+
+# Get Payment Request Status (replace {id} with actual ID from creation)
+curl http://localhost:3000/api/v1/payment-requests/{payment_request_id}
+
+# Cancel Payment Request (replace {id} with actual ID)
+curl -X POST http://localhost:3000/api/v1/payment-requests/{payment_request_id}/cancel \
+  -H "Content-Type: application/json"
+
+# Simulate Payment (replace {id} with actual ID)
+curl -X POST http://localhost:3000/api/v1/payment-requests/{payment_request_id}/simulate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 10000
+  }'
+
+# ==========================================
+# PAYMENTS
+# ==========================================
+
+# Get Payment Status (replace {id} with actual payment ID)
+curl http://localhost:3000/api/v1/payments/{payment_id}
+
+# Cancel Payment (replace {id} with actual payment ID)
+curl -X POST http://localhost:3000/api/v1/payments/{payment_id}/cancel \
+  -H "Content-Type: application/json"
+
+# Capture Payment (replace {id} with actual payment ID)
+curl -X POST http://localhost:3000/api/v1/payments/{payment_id}/capture \
+  -H "Content-Type: application/json" \
+  -d '{
+    "capture_amount": 10000
+  }'
+
+# ==========================================
+# INVOICES
+# ==========================================
+
+# Create Invoice
+curl -X POST http://localhost:3000/api/v1/invoices \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 987fcdeb-51a2-43d7-8f9e-123456789abc" \
+  -d '{
+    "external_id": "test-invoice-123",
+    "amount": 1000,
+    "description": "Test invoice for API testing",
+    "customer": {
+        "email": "test@example.com"
+    }
+  }'
+
+# Get Invoice (replace {id} with actual invoice ID)
+curl http://localhost:3000/api/v1/invoices/{invoice_id}
+
+# Expire Invoice (replace {id} with actual invoice ID)
+curl -X POST http://localhost:3000/api/v1/invoices/{invoice_id}/expire \
+  -H "Content-Type: application/json"
+
+# List Invoices
+curl "http://localhost:3000/api/v1/invoices?limit=5"
+
+# List Invoices with filters
+curl "http://localhost:3000/api/v1/invoices?external_id=test-invoice-123&statuses=PENDING,PAID"
+
+# ==========================================
+# ERROR TESTING
+# ==========================================
+
+# Invalid endpoint (should return 404)
+curl http://localhost:3000/api/v1/nonexistent
+
+# Invalid JSON (should return validation error)
+curl -X POST http://localhost:3000/api/v1/payment-requests \
+  -H "Content-Type: application/json" \
+  -d '{"invalid": "json"}'
+
+# ==========================================
+# WEBHOOKS (for testing webhook endpoint)
+# ==========================================
+
+# Test webhook endpoint - Payment Success
+curl -X POST http://localhost:3000/api/v1/webhooks \
+  -H "Content-Type: application/json" \
+  -H "x-callback-token: your_webhook_token_here" \
+  -H "webhook-id: test-webhook-001" \
+  -d '{
+    "event": "payment.capture",
+    "business_id": "test-business-id",
+    "created": "2024-01-01T00:00:00Z",
+    "data": {
+      "payment_id": "test-payment-id",
+      "reference_id": "test-order-123",
+      "payment_request_id": "test-request-id",
+      "status": "SUCCEEDED",
+      "amount": 500,
+      "currency": "PHP",
+      "channel_code": "PAYMAYA"
+    }
+  }'
+
+# Test webhook endpoint - Payment Failed
+curl -X POST http://localhost:3000/api/v1/webhooks \
+  -H "Content-Type: application/json" \
+  -H "x-callback-token: your_webhook_token_here" \
+  -H "webhook-id: test-webhook-002" \
+  -d '{
+    "event": "payment.failure",
+    "business_id": "test-business-id",
+    "created": "2024-01-01T00:00:00Z",
+    "data": {
+      "payment_id": "test-payment-id",
+      "reference_id": "test-order-123",
+      "payment_request_id": "test-request-id",
+      "status": "FAILED",
+      "amount": 500,
+      "currency": "PHP",
+      "failure_code": "USER_DECLINED_PAYMENT"
+    }
+  }'
+
+# Get stored webhooks (for debugging)
+curl http://localhost:3000/api/v1/webhooks
+
+# Get specific webhook by ID
+curl http://localhost:3000/api/v1/webhooks/test-webhook-001
+
+# ==========================================
+# NOTES
+# ==========================================
+# 1. Replace {payment_request_id}, {payment_id}, {invoice_id} with actual IDs from responses
+# 2. Use different Idempotency-Key values for multiple test runs
+# 3. All endpoints currently have no authentication required
+# 4. Server runs on port 3000 by default (check your .env file)
+# 5. Use npm run dev to start the development server with auto-reload

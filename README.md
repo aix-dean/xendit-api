@@ -284,7 +284,7 @@ npm run test:api
 Or use the individual curl commands in `curl-tests.txt`:
 ```bash
 # Copy and paste commands from curl-tests.txt
-curl http://localhost:3001/health
+curl http://localhost:3000/health
 ```
 
 ## Health Check

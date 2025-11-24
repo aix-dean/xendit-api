@@ -1,0 +1,192 @@
+Get the status of a payment 
+Updated on Oct 24, 2025
+Published on Jan 9, 2025
+Get
+/v3/payments/{payment_id}
+Retrieve the status of your payment.
+
+Security
+HTTP
+Type basic
+Header parameters
+api-version
+string
+Valid values
+[ "2024-11-11" ]
+Path parameters
+payment_id
+string
+Required
+Min length
+39
+Max length
+39
+Example
+py-cc3938dc-c2a5-43c4-89d7-7570793348c2
+Responses
+200
+400
+404
+500
+Fetch Payment Status
+
+
+application/json
+object
+Payment object
+
+payment_id
+string
+Xendit unique Payment ID generated as reference for a payment.
+
+Example
+py-1402feb0-bb79-47ae-9d1e-e69394d3949c
+business_id
+string
+Xendit-generated identifier for the business that owns the transaction
+
+Example
+5f27a14a9bf05c73dd040bc8
+reference_id
+string
+A Reference ID from merchants to identify their request.
+
+Min length
+1
+Max length
+255
+payment_request_id
+string
+Xendit unique Payment Request ID generated as reference after creation of payment request.
+
+Example
+pr-1102feb0-bb79-47ae-9d1e-e69394d3949c
+payment_token_id
+string
+Xendit unique Payment Token ID generated as reference for reusable payment details of the end user.
+
+Example
+pt-cc3938dc-c2a5-43c4-89d7-7570793348c2
+customer_id
+string
+Xendit unique Capture ID generated as reference for the end user
+
+Max length
+41
+Example
+cust-b98d6f63-d240-44ec-9bd5-aa42954c4f48
+type
+string
+The payment collection intent type for the payment request.
+
+PAY: Create a payment request that is able to receive one payment.
+
+PAY_AND_SAVE: Create a payment request that is able to receive one payment. If the payment is successful, a reusable payment token will be returned for subsequent payment requests.
+
+REUSABLE_PAYMENT_CODE: Create a payment request that is able to receive multiple payments. This is only used for repeat use payment method like a static QR, a predefined OTC payment code or a predefined Virtual Account number.
+
+Valid values
+[ "PAY", "PAY_AND_SAVE", "REUSABLE_PAYMENT_CODE" ]
+country
+string
+ISO 3166-1 alpha-2 two-letter country code for the country of transaction.
+
+Valid values
+[ "ID", "PH", "VN", "TH", "SG", "MY" ]
+Example
+ID
+currency
+string
+ISO 4217 three-letter currency code for the payment.
+
+Valid values
+[ "IDR", "PHP", "VND", "THB", "SGD", "MYR", "USD" ]
+Example
+IDR
+request_amount
+number
+The intended payment amount to be collected from the end user.
+
+Minimum
+0.0
+Example
+10000.0
+capture_method
+string
+AUTOMATIC: payment capture will be processed immediately after payment request is created. MANUAL: payment capture requires merchant's trigger via payment capture endpoint before being processed
+
+Valid values
+[ "AUTOMATIC", "MANUAL" ]
+Default
+"AUTOMATIC"
+Example
+AUTOMATIC
+channel_code
+string
+Channel code used to select the payment method provider.
+
+
+captures
+Array of object (Payments_API_Capture)
+object
+Capture object contains information about the capture that was performed
+
+capture_timestamp
+string (date-time)
+ISO 8601 date-time format.
+
+Example
+2021-12-31T23:59:59Z
+capture_id
+string
+Xendit unique Capture ID generated as reference for a single capture.
+
+Example
+cap-1502feb0-bb79-47ae-9d1e-e69394d3949c
+capture_amount
+number
+The payment amount captured for this payment. Maximum capture amount can only be equal or lesser than the authorized amount value.
+
+Minimum
+0.0
+Example
+10000.0
+status
+string
+Status of the payment.
+
+Valid values
+[ "AUTHORIZED", "CANCELED", "SUCCEEDED", "FAILED", "EXPIRED", "PENDING" ]
+Example
+SUCCEEDED
+payment_details
+object (Payments_API_PaymentDetails)
+Payment information provided by the payment method provider. Fields returned are dependent on what is made available by the provider.
+
+
+failure_code
+string
+Failure codes for payments.
+
+Valid values
+[ "ACCOUNT_ACCESS_BLOCKED", "INVALID_MERCHANT_SETTINGS", "INVALID_ACCOUNT_DETAILS", "PAYMENT_ATTEMPT_COUNTS_EXCEEDED", "USER_DEVICE_UNREACHABLE", "CHANNEL_UNAVAILABLE", "INSUFFICIENT_BALANCE", "ACCOUNT_NOT_ACTIVATED", "INVALID_TOKEN", "SERVER_ERROR", "PARTNER_TIMEOUT_ERROR", "TIMEOUT_ERROR", "USER_DECLINED_PAYMENT", "USER_DID_NOT_AUTHORIZE", "PAYMENT_REQUEST_EXPIRED", "FAILURE_DETAILS_UNAVAILABLE", "EXPIRED_OTP", "INVALID_OTP", "PAYMENT_AMOUNT_LIMITS_EXCEEDED", "OTP_ATTEMPT_COUNTS_EXCEEDED", "CARD_DECLINED", "DECLINED_BY_ISSUER", "ISSUER_UNAVAILABLE", "INVALID_CVV", "DECLINED_BY_PROCESSOR", "CAPTURE_AMOUNT_EXCEEDED ", "AUTHENTICATION_FAILED" ]
+Example
+CARD_DECLINED
+metadata
+object (Payments_API_MerchantMetadata)
+Key-value entries for your custom data. You can specify up to 50 keys, with key names up to 40 characters and values up to 500 characters. This is for your convenience. Xendit will not use this data for any processing.
+
+Example
+{ "my_custom_id": "merchant-123", "my_custom_order_id": "order-123" }
+created
+string (date-time)
+ISO 8601 date-time format.
+
+Example
+2021-12-31T23:59:59Z
+updated
+string (date-time)
+ISO 8601 date-time format.
+
+Example
+2021-12-31T23:59:59Z

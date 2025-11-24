@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  xendit-api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - XENDIT_API_KEY=${XENDIT_API_KEY}
+      - XENDIT_BASE_URL=https://api.xendit.co
+      - XENDIT_API_VERSION=2024-11-11
+      - API_USERNAME=${API_USERNAME}
+      - API_PASSWORD=${API_PASSWORD}
+      - WEBHOOK_CALLBACK_TOKEN=${WEBHOOK_CALLBACK_TOKEN}
+      - LOG_LEVEL=info
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+      - CORS_ORIGIN=http://localhost:3000
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add Redis for production idempotency store
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   restart: unless-stopped
+
+# volumes:
+#   redis_data:

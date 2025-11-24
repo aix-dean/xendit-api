@@ -1,0 +1,48 @@
+Simulate payment [test mode] 
+Updated on Oct 24, 2025
+Published on Jan 9, 2025
+Post
+/v3/payment_requests/{payment_request_id}/simulate
+Simulate payment completion. Test-only endpoint for payment flow validation.
+
+Security
+HTTP
+Type basic
+Header parameters
+api-version
+string
+Valid values
+[ "2024-11-11" ]
+Path parameters
+payment_request_id
+string
+Required
+Min length
+39
+Max length
+39
+Example
+pr-8877c08a-740d-4153-9816-3d744ed197a5
+Body parameters
+
+application/json
+object
+amount
+number
+Amount to simulate.
+
+Responses
+200
+500
+Simulate payment for a Payment Request
+
+
+application/json
+object
+status
+string
+Status of a simulation will always be PENDING
+
+message
+string
+A simulated payment for the specified payment request id is being processed. You will be informed of the result via a webhook.

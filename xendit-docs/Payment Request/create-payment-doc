@@ -1,0 +1,702 @@
+//Payments 
+Introduction 
+Updated on Sep 30, 2025
+Published on Nov 29, 2024
+Payments3.0.0
+Payments API enables businesses to integrate seamless and secure payment processing into their platforms, supporting key features like a customizable checkout page for user-friendly payment experiences, direct payments through API for tailored and flexible transaction flows, and recurring subscriptions to automate billing for memberships or SaaS. These APIs streamline payment processing by supporting multiple payment channels, ensuring PCI compliance, and offering features like tokenization, real-time transactions, and automated retries for subscription payments, making them essential for modern, scalable businesses.
+
+
+Servers
+Xendit API
+
+https://api.xendit.co
+
+
+Create a payment request 
+Updated on Oct 24, 2025
+Published on Jan 9, 2025
+Post
+/v3/payment_requests
+Create payment request. Initiates payment collection from end user.
+
+Security
+HTTP
+Type basic
+Header parameters
+api-version
+string
+Valid values
+[ "2024-11-11" ]
+for-user-id
+string
+The XenPlatform subaccount user id that will perform this transaction.
+
+with-split-rule
+string
+The XenPlatform split rule id that will be applied to this transaction.
+
+Body parameters
+
+application/json
+OneOf
+Payments_API_Pay
+object (Payments_API_Pay)
+reference_id
+string
+Required
+A reference ID from merchants to identify their request. For "CARDS" channel code, reference ID must be unique.
+
+Min length
+1
+Max length
+255
+type
+string
+Required
+PAY: Create a payment request that is able to receive one payment.
+
+Valid values
+[ "PAY" ]
+country
+string
+Required
+ISO 3166-1 alpha-2 two-letter country code for the country of transaction.
+
+Valid values
+[ "ID", "PH", "VN", "TH", "SG", "MY" ]
+Example
+ID
+currency
+string
+Required
+ISO 4217 three-letter currency code for the payment.
+
+Valid values
+[ "IDR", "PHP", "VND", "THB", "SGD", "MYR", "USD" ]
+Example
+IDR
+channel_code
+string
+Required
+Channel code used to select the payment method provider.
+
+
+channel_properties
+object (Payments_API_ChannelPropertiesWidgetPay)
+Required
+Data required to initiate transaction with payment method provider. Refer to the Channel Data Finder widget in the channel_code field above for the full list of required properties for each channel.
+
+request_amount
+number
+Required
+The intended payment amount to be collected from the end user.
+
+Minimum
+0.0
+Example
+10000.0
+capture_method
+string
+AUTOMATIC: payment capture will be processed immediately after payment request is created. MANUAL: payment capture requires merchant's trigger via payment capture endpoint before being processed
+
+Valid values
+[ "AUTOMATIC", "MANUAL" ]
+Default
+"AUTOMATIC"
+Example
+AUTOMATIC
+description
+string
+A custom description for the Payment Request.
+
+Min length
+1
+Max length
+1000
+Example
+Payment for your order #123
+customer_id
+string
+Xendit unique Capture ID generated as reference for the end user
+
+Max length
+41
+Example
+cust-b98d6f63-d240-44ec-9bd5-aa42954c4f48
+customer
+object (Payments_API_XenditStandardCustomer)
+type
+string
+Required
+Type of customer
+
+Valid values
+[ "INDIVIDUAL" ]
+reference_id
+string
+Required
+Merchant provided identifier for the customer. Must be unique. Alphanumeric no special characters allowed
+
+Min length
+1
+Max length
+255
+email
+string (email)
+E-mail address of customer. Maximum length 50 characters
+
+Min length
+4
+Max length
+50
+mobile_number
+string
+Mobile number of customer in E.164 format +(country code)(subscriber number)
+
+Min length
+1
+Max length
+50
+individual_detail
+object (Payments_API_XenditStandardIndividualDetail)
+Required
+items
+Array of object (Payments_API_XenditStandardItem)
+Array of objects describing the item/s attached to the payment.
+
+object
+shipping_information
+object (Payments_API_XenditStandardShippingInformation)
+metadata
+object (Payments_API_MerchantMetadata)
+Key-value entries for your custom data. You can specify up to 50 keys, with key names up to 40 characters and values up to 500 characters. This is for your convenience. Xendit will not use this data for any processing.
+
+Example
+{ "my_custom_id": "merchant-123", "my_custom_order_id": "order-123" }
+Payments_API_PayAndSave
+object (Payments_API_PayAndSave)
+reference_id
+string
+Required
+A reference ID from merchants to identify their request. For "CARDS" channel code, reference ID must be unique.
+
+Min length
+1
+Max length
+255
+type
+string
+Required
+PAY_AND_SAVE: Create a payment request that is able to receive one payment. If the payment is successful, a reusable payment token will be returned in the callback as saved payment information for subsequent payment requests.
+
+Valid values
+[ "PAY_AND_SAVE" ]
+country
+string
+Required
+ISO 3166-1 alpha-2 two-letter country code for the country of transaction.
+
+Valid values
+[ "ID", "PH", "VN", "TH", "SG", "MY" ]
+Example
+ID
+currency
+string
+Required
+ISO 4217 three-letter currency code for the payment.
+
+Valid values
+[ "IDR", "PHP", "VND", "THB", "SGD", "MYR", "USD" ]
+Example
+IDR
+channel_code
+string
+Required
+Channel code used to select the payment method provider.
+
+
+channel_properties
+object (Payments_API_ChannelPropertiesWidgetPayAndSave)
+Required
+Data required to initiate transaction with payment method provider. Refer to the Channel Data Finder widget in the channel_code field above for the full list of required properties for each channel.
+
+request_amount
+number
+Required
+The intended payment amount to be collected from the end user.
+
+Minimum
+0.0
+Example
+10000.0
+capture_method
+string
+AUTOMATIC: payment capture will be processed immediately after payment request is created. MANUAL: payment capture requires merchant's trigger via payment capture endpoint before being processed
+
+Valid values
+[ "AUTOMATIC", "MANUAL" ]
+Default
+"AUTOMATIC"
+Example
+AUTOMATIC
+customer_id
+string
+Xendit unique Capture ID generated as reference for the end user
+
+Max length
+41
+Example
+cust-b98d6f63-d240-44ec-9bd5-aa42954c4f48
+customer
+object (Payments_API_XenditStandardCustomer)
+type
+string
+Required
+Type of customer
+
+Valid values
+[ "INDIVIDUAL" ]
+reference_id
+string
+Required
+Merchant provided identifier for the customer. Must be unique. Alphanumeric no special characters allowed
+
+Min length
+1
+Max length
+255
+email
+string (email)
+E-mail address of customer. Maximum length 50 characters
+
+Min length
+4
+Max length
+50
+mobile_number
+string
+Mobile number of customer in E.164 format +(country code)(subscriber number)
+
+Min length
+1
+Max length
+50
+individual_detail
+object (Payments_API_XenditStandardIndividualDetail)
+Required
+description
+string
+A custom description for the Payment Request.
+
+Min length
+1
+Max length
+1000
+Example
+Payment for your order #123
+items
+Array of object (Payments_API_XenditStandardItem)
+Array of objects describing the item/s attached to the payment.
+
+object
+shipping_information
+object (Payments_API_XenditStandardShippingInformation)
+metadata
+object (Payments_API_MerchantMetadata)
+Key-value entries for your custom data. You can specify up to 50 keys, with key names up to 40 characters and values up to 500 characters. This is for your convenience. Xendit will not use this data for any processing.
+
+Example
+{ "my_custom_id": "merchant-123", "my_custom_order_id": "order-123" }
+Payments_API_PayWithToken
+object (Payments_API_PayWithToken)
+reference_id
+string
+Required
+A reference ID from merchants to identify their request. For "CARDS" channel code, reference ID must be unique.
+
+Min length
+1
+Max length
+255
+type
+string
+Required
+PAY: Create a payment request that is able to receive one payment.
+
+Valid values
+[ "PAY" ]
+payment_token_id
+string
+Required
+Xendit unique Payment Token ID generated as reference for reusable payment details of the end user.
+
+Example
+pt-cc3938dc-c2a5-43c4-89d7-7570793348c2
+country
+string
+Required
+ISO 3166-1 alpha-2 two-letter country code for the country of transaction.
+
+Valid values
+[ "ID", "PH", "VN", "TH", "SG", "MY" ]
+Example
+ID
+currency
+string
+Required
+ISO 4217 three-letter currency code for the payment.
+
+Valid values
+[ "IDR", "PHP", "VND", "THB", "SGD", "MYR", "USD" ]
+Example
+IDR
+channel_code
+string
+Required
+Channel code used to select the payment method provider.
+
+
+channel_properties
+object (Payments_API_ChannelPropertiesWidgetPayWithToken)
+Data required to initiate transaction with payment method provider. Refer to the Channel Data Finder widget in the channel_code field above for the full list of required properties for each channel.
+
+request_amount
+number
+Required
+The intended payment amount to be collected from the end user.
+
+Minimum
+0.0
+Example
+10000.0
+capture_method
+string
+AUTOMATIC: payment capture will be processed immediately after payment request is created. MANUAL: payment capture requires merchant's trigger via payment capture endpoint before being processed
+
+Valid values
+[ "AUTOMATIC", "MANUAL" ]
+Default
+"AUTOMATIC"
+Example
+AUTOMATIC
+description
+string
+A custom description for the Payment Request.
+
+Min length
+1
+Max length
+1000
+Example
+Payment for your order #123
+customer_id
+string
+Xendit unique Capture ID generated as reference for the end user
+
+Max length
+41
+Example
+cust-b98d6f63-d240-44ec-9bd5-aa42954c4f48
+customer
+object (Payments_API_XenditStandardCustomer)
+type
+string
+Required
+Type of customer
+
+Valid values
+[ "INDIVIDUAL" ]
+reference_id
+string
+Required
+Merchant provided identifier for the customer. Must be unique. Alphanumeric no special characters allowed
+
+Min length
+1
+Max length
+255
+email
+string (email)
+E-mail address of customer. Maximum length 50 characters
+
+Min length
+4
+Max length
+50
+mobile_number
+string
+Mobile number of customer in E.164 format +(country code)(subscriber number)
+
+Min length
+1
+Max length
+50
+individual_detail
+object (Payments_API_XenditStandardIndividualDetail)
+Required
+items
+Array of object (Payments_API_XenditStandardItem)
+Array of objects describing the item/s attached to the payment.
+
+object
+shipping_information
+object (Payments_API_XenditStandardShippingInformation)
+metadata
+object (Payments_API_MerchantMetadata)
+Key-value entries for your custom data. You can specify up to 50 keys, with key names up to 40 characters and values up to 500 characters. This is for your convenience. Xendit will not use this data for any processing.
+
+Example
+{ "my_custom_id": "merchant-123", "my_custom_order_id": "order-123" }
+Payments_API_ReusablePaymentCode
+object (Payments_API_ReusablePaymentCode)
+reference_id
+string
+Required
+A reference ID from merchants to identify their request. For "CARDS" channel code, reference ID must be unique.
+
+Min length
+1
+Max length
+255
+type
+string
+Required
+REUSABLE_PAYMENT_CODE: Create one payment request that is able to receive multiple payments. This is only used for repeat use payment method like static QR, static OTC payment code or a predefined Virtual Account number.
+
+Valid values
+[ "REUSABLE_PAYMENT_CODE" ]
+country
+string
+Required
+ISO 3166-1 alpha-2 two-letter country code for the country of transaction.
+
+Valid values
+[ "ID", "PH", "VN", "TH", "SG", "MY" ]
+Example
+ID
+currency
+string
+Required
+ISO 4217 three-letter currency code for the payment.
+
+Valid values
+[ "IDR", "PHP", "VND", "THB", "SGD", "MYR", "USD" ]
+Example
+IDR
+channel_code
+string
+Required
+Channel code used to select the payment method provider.
+
+
+channel_properties
+object (Payments_API_ChannelPropertiesWidgetReusablePaymentCode)
+Required
+Data required to initiate transaction with payment method provider. Refer to the Channel Data Finder widget in the channel_code field above for the full list of required properties for each channel.
+
+request_amount
+number
+The intended payment amount to be collected from the end user.
+
+Minimum
+0.0
+Example
+10000.0
+capture_method
+string
+AUTOMATIC: payment capture will be processed immediately after payment request is created. MANUAL: payment capture requires merchant's trigger via payment capture endpoint before being processed
+
+Valid values
+[ "AUTOMATIC", "MANUAL" ]
+Default
+"AUTOMATIC"
+Example
+AUTOMATIC
+description
+string
+A custom description for the Payment Request.
+
+Min length
+1
+Max length
+1000
+Example
+Payment for your order #123
+metadata
+object (Payments_API_MerchantMetadata)
+Key-value entries for your custom data. You can specify up to 50 keys, with key names up to 40 characters and values up to 500 characters. This is for your convenience. Xendit will not use this data for any processing.
+
+Example
+{ "my_custom_id": "merchant-123", "my_custom_order_id": "order-123" }
+items
+Array of object (Payments_API_XenditStandardItem)
+Array of objects describing the item/s attached to the payment.
+
+object
+shipping_information
+object (Payments_API_XenditStandardShippingInformation)
+Responses
+201
+400
+403
+409
+500
+503
+Payment Request Created
+
+
+application/json
+object
+Payment request object
+
+business_id
+string
+Xendit-generated identifier for the business that owns the transaction
+
+Example
+5f27a14a9bf05c73dd040bc8
+reference_id
+string
+A reference ID from merchants to identify their request. For "CARDS" channel code, reference ID must be unique.
+
+Min length
+1
+Max length
+255
+payment_request_id
+string
+Xendit unique Payment Request ID generated as reference after creation of payment request.
+
+Example
+pr-1102feb0-bb79-47ae-9d1e-e69394d3949c
+payment_token_id
+string
+Xendit unique Payment Token ID generated as reference for reusable payment details of the end user.
+
+Example
+pt-cc3938dc-c2a5-43c4-89d7-7570793348c2
+customer_id
+string
+Xendit unique Capture ID generated as reference for the end user
+
+Max length
+41
+Example
+cust-b98d6f63-d240-44ec-9bd5-aa42954c4f48
+latest_payment_id
+string
+Latest Payment ID linked to the payment request.
+
+Example
+py-1402feb0-bb79-47ae-9d1e-e69394d3949c
+type
+string
+The payment collection intent type for the payment request.
+
+PAY: Create a payment request that is able to receive one payment.
+
+PAY_AND_SAVE: Create a payment request that is able to receive one payment. If the payment is successful, a reusable payment token will be returned for subsequent payment requests.
+
+REUSABLE_PAYMENT_CODE: Create a payment request that is able to receive multiple payments. This is only used for repeat use payment method like a static QR, a predefined OTC payment code or a predefined Virtual Account number.
+
+Valid values
+[ "PAY", "PAY_AND_SAVE", "REUSABLE_PAYMENT_CODE" ]
+country
+string
+ISO 3166-1 alpha-2 two-letter country code for the country of transaction.
+
+Valid values
+[ "ID", "PH", "VN", "TH", "SG", "MY" ]
+Example
+ID
+currency
+string
+ISO 4217 three-letter currency code for the payment.
+
+Valid values
+[ "IDR", "PHP", "VND", "THB", "SGD", "MYR", "USD" ]
+Example
+IDR
+request_amount
+number
+The intended payment amount to be collected from the end user.
+
+Minimum
+0.0
+Example
+10000.0
+capture_method
+string
+AUTOMATIC: payment capture will be processed immediately after payment request is created. MANUAL: payment capture requires merchant's trigger via payment capture endpoint before being processed
+
+Valid values
+[ "AUTOMATIC", "MANUAL" ]
+Default
+"AUTOMATIC"
+Example
+AUTOMATIC
+channel_code
+string
+Channel code used to select the payment method provider.
+
+
+channel_properties
+object (Payments_API_ChannelProperties)
+Data required to initiate transaction with payment method provider. Refer to the Channel Data Finder widget in the channel_code field above for the full list of required properties for each channel.
+
+actions
+Array of object (Payments_API_Actions)
+object
+Actions object contains possible next steps merchants can take to proceed with payment collection from end user
+
+status
+string
+Status of the payment request.
+
+Valid values
+[ "ACCEPTING_PAYMENTS", "REQUIRES_ACTION", "AUTHORIZED", "CANCELED", "EXPIRED", "SUCCEEDED", "FAILED" ]
+Example
+SUCCEEDED
+failure_code
+string
+Failure codes for payments.
+
+Valid values
+[ "ACCOUNT_ACCESS_BLOCKED", "INVALID_MERCHANT_SETTINGS", "INVALID_ACCOUNT_DETAILS", "PAYMENT_ATTEMPT_COUNTS_EXCEEDED", "USER_DEVICE_UNREACHABLE", "CHANNEL_UNAVAILABLE", "INSUFFICIENT_BALANCE", "ACCOUNT_NOT_ACTIVATED", "INVALID_TOKEN", "SERVER_ERROR", "PARTNER_TIMEOUT_ERROR", "TIMEOUT_ERROR", "USER_DECLINED_PAYMENT", "USER_DID_NOT_AUTHORIZE", "PAYMENT_REQUEST_EXPIRED", "FAILURE_DETAILS_UNAVAILABLE", "EXPIRED_OTP", "INVALID_OTP", "PAYMENT_AMOUNT_LIMITS_EXCEEDED", "OTP_ATTEMPT_COUNTS_EXCEEDED", "CARD_DECLINED", "DECLINED_BY_ISSUER", "ISSUER_UNAVAILABLE", "INVALID_CVV", "DECLINED_BY_PROCESSOR", "CAPTURE_AMOUNT_EXCEEDED ", "AUTHENTICATION_FAILED" ]
+Example
+CARD_DECLINED
+description
+string
+A custom description for the Payment Request.
+
+Min length
+1
+Max length
+1000
+Example
+Payment for your order #123
+metadata
+object (Payments_API_MerchantMetadata)
+Key-value entries for your custom data. You can specify up to 50 keys, with key names up to 40 characters and values up to 500 characters. This is for your convenience. Xendit will not use this data for any processing.
+
+Example
+{ "my_custom_id": "merchant-123", "my_custom_order_id": "order-123" }
+items
+Array of object (Payments_API_XenditStandardItem)
+Array of objects describing the item/s attached to the payment.
+
+object
+shipping_information
+object (Payments_API_XenditStandardShippingInformation)
+created
+string (date-time)
+ISO 8601 date-time format.
+
+Example
+2021-12-31T23:59:59Z
+updated
+string (date-time)
+ISO 8601 date-time format.
+
+Example
+2021-12-31T23:59:59Z

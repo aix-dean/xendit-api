@@ -1,0 +1,35 @@
+Quick setup 
+Published on Oct 22, 2024
+API Documentation
+Overview
+Quick setup
+API format
+The Xendit API is organized around REST. Our API has predictable, resource-oriented URLs, and uses HTTP response codes to indicate API errors. We use built-in HTTP features and HTTP verbs, which are understood by off-the-shelf HTTP clients. JSON is returned by all API responses, including errors.
+
+Authentication
+Getting Started with Xendit APIs
+To begin exploring our APIs, please ensure you have registered an account on our dashboard here. You can obtain and manage your API keys (for both test and live environments) in the API Keys Settings section.
+
+Authentication
+To authenticate your API requests, include your secret API key in the request. Follow these steps:
+
+Generate a secret API key
+
+Retrieve your secret API key from the Dashboard.
+
+Choose Basic Access Authentication (BASIC AUTH).
+
+Use the BASIC AUTH format: {username}:{password}
+
+Enter your Secret API key as the username and leave the password field empty. Ensure you include a colon (`:`) at the end.
+
+Encode the resulting value using Base64.
+
+Include the Base64-encoded value in the Authorization header of your requests.
+
+Important Considerations
+Security: Keep your API keys confidential and avoid sharing them.  
+
+HTTPS Only: All API requests must be made over HTTPS; HTTP requests will fail.
+
+Test Environment: Requests made in the test environment will not interact with banking networks and incur no charges.

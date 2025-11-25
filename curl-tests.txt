@@ -31,7 +31,7 @@ curl http://localhost:3000/health
 # ==========================================
 
 # Create Payment Request
-curl -X POST http://localhost:3002/api/v1/payment-requests \
+curl -X POST https://xendit-api-272363630855.asia-southeast1.run.app/api/v1/payment-requests \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: 123e4567-e89b-12d3-a456-426614174002" \
   -d '{
@@ -48,12 +48,27 @@ curl -X POST http://localhost:3002/api/v1/payment-requests \
     "request_amount": 500,
     "description": "Test payment for API testing"
   }'
+# Create Payment Request for Credit Card
+curl -X POST https://xendit-api-272363630855.asia-southeast1.run.app/api/v1/payment-requests \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 123e4567-e89b-12d3-a456-426614174003" \
+  -d '{
+    "reference_id": "test-order-124",
+    "type": "PAY",
+    "country": "PH",
+    "currency": "PHP",
+    "channel_code": "CREDIT_CARD",
+    "channel_properties": {},
+    "request_amount": 500,
+    "description": "Test payment for API testing with credit card"
+  }'
+
 
 # Get Payment Request Status (replace {id} with actual ID from creation)
-curl http://localhost:3000/api/v1/payment-requests/{payment_request_id}
+curl https://xendit-api-272363630855.asia-southeast1.run.app/api/v1/payment-requests/{payment_request_id}
 
 # Cancel Payment Request (replace {id} with actual ID)
-curl -X POST http://localhost:3000/api/v1/payment-requests/{payment_request_id}/cancel \
+curl -X POST https://xendit-api-272363630855.asia-southeast1.run.app/api/v1/payment-requests/{payment_request_id}/cancel \
   -H "Content-Type: application/json"
 
 # Simulate Payment (replace {id} with actual ID)

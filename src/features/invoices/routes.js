@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const xenditClient = require('../services/xenditClient');
-const { validate, validateParams, validateQuery } = require('../middleware/validation');
-const { createInvoiceSchema, listInvoicesSchema } = require('../validation/schemas');
-const logger = require('../utils/logger');
+const xenditClient = require('../../shared/services/xenditClient');
+const { validate, validateParams, validateQuery } = require('../../shared/middleware/validation');
+const { createInvoiceSchema, listInvoicesSchema } = require('../../shared/validation/schemas');
+const logger = require('../../shared/utils/logger');
 
 // Parameter validation schemas
 const invoiceIdSchema = require('joi').object({

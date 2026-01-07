@@ -4,10 +4,16 @@ const helmet = require('helmet');
 const cors = require('cors');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
-const logger = require('./utils/logger');
-const errorHandler = require('./middleware/errorHandler');
-const idempotencyMiddleware = require('./middleware/idempotency');
-const routes = require('./routes');
+const logger = require('./shared/utils/logger');
+const errorHandler = require('./shared/middleware/errorHandler');
+const idempotencyMiddleware = require('./shared/middleware/idempotency');
+
+// Import feature routes
+const authRoutes = require('./features/auth');
+const paymentRoutes = require('./features/payments');
+const paymentRequestRoutes = require('./features/payment-requests');
+const invoiceRoutes = require('./features/invoices');
+const webhookRoutes = require('./features/webhooks');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -56,7 +62,11 @@ app.get('/health', (req, res) => {
 });
 
 // API routes (no authentication required)
-app.use('/api/v1', idempotencyMiddleware, routes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/payment-requests', idempotencyMiddleware, paymentRequestRoutes);
+app.use('/api/v1/invoices', invoiceRoutes);
+app.use('/api/v1/webhooks', webhookRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

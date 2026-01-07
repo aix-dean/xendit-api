@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const xenditClient = require('../services/xenditClient');
-const { validate, validateParams } = require('../middleware/validation');
+const xenditClient = require('../../shared/services/xenditClient');
+const { validate, validateParams } = require('../../shared/middleware/validation');
 const {
   createPaymentRequestSchema,
   cancelPaymentRequestSchema,
   simulatePaymentRequestSchema
-} = require('../validation/schemas');
-const logger = require('../utils/logger');
+} = require('../../shared/validation/schemas');
+const logger = require('../../shared/utils/logger');
 
 // Parameter validation schemas
 const paymentRequestIdSchema = require('joi').object({
@@ -26,6 +26,17 @@ router.post('/', validate(createPaymentRequestSchema), async (req, res, next) =>
       data: result
     });
   } catch (error) {
+    // If it's an axios error with response data, return the Xendit error details
+    if (error.response && error.response.data) {
+      logger.error('Xendit API error details', {
+        status: error.response.status,
+        data: error.response.data
+      });
+      return res.status(error.response.status).json({
+        success: false,
+        error: error.response.data
+      });
+    }
     next(error);
   }
 });

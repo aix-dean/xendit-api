@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const jwtService = require('../services/jwtService');
-const userService = require('../services/userService');
-const { validate } = require('../middleware/validation');
-const logger = require('../utils/logger');
+const service = require('./service');
+const { validate } = require('../../shared/middleware/validation');
+const logger = require('../../shared/utils/logger');
 
 // Validation schemas
 const loginSchema = require('joi').object({
@@ -23,7 +22,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     logger.info('Login attempt', { username });
 
     // Find user by credentials
-    const user = await userService.findByCredentials(username, password);
+    const user = await service.findByCredentials(username, password);
 
     if (!user) {
       logger.warn('Invalid login credentials', { username });
@@ -36,13 +35,13 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     }
 
     // Generate tokens
-    const accessToken = jwtService.generateAccessToken({
+    const accessToken = service.generateAccessToken({
       userId: user.id,
       username: user.username,
       role: user.role
     });
 
-    const refreshToken = jwtService.generateRefreshToken({
+    const refreshToken = service.generateRefreshToken({
       userId: user.id,
       type: 'refresh'
     });
@@ -81,10 +80,10 @@ router.post('/refresh', validate(refreshTokenSchema), async (req, res) => {
     logger.info('Token refresh attempt');
 
     // Verify refresh token
-    const decoded = jwtService.verifyToken(refreshToken);
+    const decoded = service.verifyToken(refreshToken);
 
     // Validate refresh token payload
-    const user = await userService.validateRefreshToken(decoded);
+    const user = await service.validateRefreshToken(decoded);
 
     if (!user) {
       logger.warn('Invalid refresh token');
@@ -97,7 +96,7 @@ router.post('/refresh', validate(refreshTokenSchema), async (req, res) => {
     }
 
     // Generate new access token
-    const accessToken = jwtService.generateAccessToken({
+    const accessToken = service.generateAccessToken({
       userId: user.id,
       username: user.username,
       role: user.role
@@ -127,7 +126,7 @@ router.post('/refresh', validate(refreshTokenSchema), async (req, res) => {
 router.post('/logout', async (req, res) => {
   try {
     const authHeader = req.headers['authorization'];
-    const token = jwtService.extractTokenFromHeader(authHeader);
+    const token = service.extractTokenFromHeader(authHeader);
 
     if (token) {
       // In production, add token to blacklist
@@ -154,7 +153,7 @@ router.post('/logout', async (req, res) => {
 router.get('/me', async (req, res) => {
   try {
     const authHeader = req.headers['authorization'];
-    const token = jwtService.extractTokenFromHeader(authHeader);
+    const token = service.extractTokenFromHeader(authHeader);
 
     if (!token) {
       return res.status(401).json({
@@ -165,8 +164,8 @@ router.get('/me', async (req, res) => {
       });
     }
 
-    const decoded = jwtService.verifyToken(token);
-    const user = await userService.findById(decoded.userId);
+    const decoded = service.verifyToken(token);
+    const user = await service.findById(decoded.userId);
 
     if (!user) {
       return res.status(404).json({

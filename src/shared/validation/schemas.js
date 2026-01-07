@@ -27,22 +27,47 @@ const metadataSchema = Joi.object().pattern(
 ).max(50);
 
 // Payment Request schemas
-const createPaymentRequestSchema = Joi.object({
-  reference_id: Joi.string().min(1).max(255).required(),
-  type: Joi.string().valid('PAY', 'PAY_AND_SAVE', 'REUSABLE_PAYMENT_CODE').required(),
-  country: Joi.string().valid('ID', 'PH', 'VN', 'TH', 'SG', 'MY').required(),
-  currency: Joi.string().valid('IDR', 'PHP', 'VND', 'THB', 'SGD', 'MYR', 'USD').required(),
-  channel_code: Joi.string().required(),
-  channel_properties: Joi.object().required(),
-  request_amount: Joi.number().min(0).required(),
-  capture_method: Joi.string().valid('AUTOMATIC', 'MANUAL').default('AUTOMATIC'),
-  description: Joi.string().min(1).max(1000).optional(),
-  customer_id: Joi.string().max(41).optional(),
-  customer: customerSchema.optional(),
-  items: Joi.array().items(itemSchema).optional(),
-  shipping_information: shippingInfoSchema.optional(),
-  metadata: metadataSchema.optional()
-});
+const createPaymentRequestSchema = Joi.alternatives().try(
+  // Old format (Payment Requests)
+  Joi.object({
+    reference_id: Joi.string().min(1).max(255).required(),
+    type: Joi.string().valid('PAY', 'PAY_AND_SAVE', 'REUSABLE_PAYMENT_CODE').required(),
+    country: Joi.string().valid('ID', 'PH', 'VN', 'TH', 'SG', 'MY').required(),
+    currency: Joi.string().valid('IDR', 'PHP', 'VND', 'THB', 'SGD', 'MYR', 'USD').required(),
+    channel_code: Joi.string().required(),
+    channel_properties: Joi.object().required(),
+    request_amount: Joi.number().min(0).required(),
+    capture_method: Joi.string().valid('AUTOMATIC', 'MANUAL').default('AUTOMATIC'),
+    description: Joi.string().min(1).max(1000).optional(),
+    customer_id: Joi.string().max(41).optional(),
+    customer: customerSchema.optional(),
+    items: Joi.array().items(itemSchema).optional(),
+    shipping_information: shippingInfoSchema.optional(),
+    metadata: metadataSchema.optional()
+  }),
+  // New format (Cards Session)
+  Joi.object({
+    reference_id: Joi.string().min(1).max(255).required(),
+    session_type: Joi.string().valid('PAY').required(),
+    mode: Joi.string().valid('CARDS_SESSION_JS').required(),
+    amount: Joi.number().min(0).required(),
+    currency: Joi.string().valid('IDR', 'PHP', 'VND', 'THB', 'SGD', 'MYR', 'USD').required(),
+    channel_code: Joi.string().optional(),
+    channel_properties: Joi.object({
+      cards: Joi.object({
+        skip_three_ds: Joi.boolean().optional()
+      }).optional()
+    }).optional(),
+    country: Joi.string().valid('ID', 'PH', 'VN', 'TH', 'SG', 'MY').required(),
+    customer: customerSchema.required(),
+    cards_session_js: Joi.object({
+      success_return_url: Joi.string().uri().required(),
+      failure_return_url: Joi.string().uri().required()
+    }).required(),
+    description: Joi.string().min(1).max(1000).optional(),
+    metadata: metadataSchema.optional()
+  })
+);
 
 const cancelPaymentRequestSchema = Joi.object({
   // No body required for cancel

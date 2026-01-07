@@ -14,10 +14,12 @@
 # - GRABPAY: requires success_return_url, failure_return_url, cancel_return_url
 # - GCASH: requires success_return_url, failure_return_url, cancel_return_url
 # - 7ELEVEN: requires (usually empty object {})
+# - CARDS: requires mid_label, card_details, skip_three_ds, success_return_url, failure_return_url
 #
 # Indonesian channel codes:
 # - QRIS: requires (usually empty object {})
 # - DANA, OVO, GOPAY, LINKAJA, SHOPEEPAY: require success_return_url, failure_return_url
+# - CARDS: requires mid_label, card_details, skip_three_ds, success_return_url, failure_return_url
 #
 # Contact Xendit support for your account's available channel codes and required properties
 
@@ -31,7 +33,7 @@ curl http://localhost:3000/health
 # ==========================================
 
 # Create Payment Request
-curl -X POST https://xendit-api-272363630855.asia-southeast1.run.app/api/v1/payment-requests \
+curl -X POST http://localhost:3000/api/v1/payment-requests \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: 123e4567-e89b-12d3-a456-426614174002" \
   -d '{
@@ -48,27 +50,46 @@ curl -X POST https://xendit-api-272363630855.asia-southeast1.run.app/api/v1/paym
     "request_amount": 500,
     "description": "Test payment for API testing"
   }'
-# Create Payment Request for Credit Card
-curl -X POST https://xendit-api-272363630855.asia-southeast1.run.app/api/v1/payment-requests \
+# Create Payment Request for Credit Card (Cards Session format)
+curl -X POST http://localhost:3000/api/v1/payment-requests \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: 123e4567-e89b-12d3-a456-426614174003" \
   -d '{
     "reference_id": "test-order-124",
-    "type": "PAY",
-    "country": "PH",
+    "session_type": "PAY",
+    "mode": "CARDS_SESSION_JS",
+    "amount": 500,
     "currency": "PHP",
-    "channel_code": "CREDIT_CARD",
-    "channel_properties": {},
-    "request_amount": 500,
+    "channel_code": "CARDS",
+    "channel_properties": {
+        "cards": {
+            "skip_three_ds": false
+        }
+    },
+    "country": "PH",
+    "customer": {
+        "reference_id": "test-customer-123",
+        "type": "INDIVIDUAL",
+        "email": "test@example.com",
+        "mobile_number": "+63123456789",
+        "individual_detail": {
+            "given_names": "John",
+            "surname": "Doe"
+        }
+    },
+    "cards_session_js": {
+        "success_return_url": "https://your-app.com/payment/success",
+        "failure_return_url": "https://your-app.com/payment/failed"
+    },
     "description": "Test payment for API testing with credit card"
   }'
 
 
 # Get Payment Request Status (replace {id} with actual ID from creation)
-curl https://xendit-api-272363630855.asia-southeast1.run.app/api/v1/payment-requests/{payment_request_id}
+curl http://localhost:3000/api/v1/payment-requests/{payment_request_id}
 
 # Cancel Payment Request (replace {id} with actual ID)
-curl -X POST https://xendit-api-272363630855.asia-southeast1.run.app/api/v1/payment-requests/{payment_request_id}/cancel \
+curl -X POST http://localhost:3000/api/v1/payment-requests/{payment_request_id}/cancel \
   -H "Content-Type: application/json"
 
 # Simulate Payment (replace {id} with actual ID)

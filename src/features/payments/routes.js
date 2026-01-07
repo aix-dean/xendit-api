@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const xenditClient = require('../services/xenditClient');
-const { validate, validateParams } = require('../middleware/validation');
-const { capturePaymentSchema } = require('../validation/schemas');
-const logger = require('../utils/logger');
+const xenditClient = require('../../shared/services/xenditClient');
+const { validate, validateParams } = require('../../shared/middleware/validation');
+const { capturePaymentSchema } = require('../../shared/validation/schemas');
+const logger = require('../../shared/utils/logger');
 
 // Parameter validation schemas
 const paymentIdSchema = require('joi').object({

@@ -41,7 +41,7 @@ const verifyWebhook = (req, res, next) => {
 };
 
 // Process payment webhook events
-const processPaymentWebhook = async (webhookData) => {
+const processPaymentWebhook = async (webhookData, req) => {
   const { event, business_id, created, data } = webhookData;
   const webhookId = req.headers['webhook-id'] || `${event}-${data.payment_id}-${created}`;
 
@@ -70,12 +70,14 @@ const processPaymentWebhook = async (webhookData) => {
   // Process based on event type
   switch (event) {
     case 'payment.capture':
+    case 'payment.succeeded':
       await handlePaymentCapture(data);
       break;
     case 'payment.authorization':
       await handlePaymentAuthorization(data);
       break;
     case 'payment.failure':
+    case 'payment.failed':
       await handlePaymentFailure(data);
       break;
     default:
@@ -270,7 +272,7 @@ router.post('/', verifyWebhook, validate(webhookSchema), async (req, res, next) 
     });
 
     // Process the webhook
-    const result = await processPaymentWebhook(req.body);
+    const result = await processPaymentWebhook(req.body, req);
 
     if (result.duplicate) {
       // Still return success for duplicate webhooks (idempotency)

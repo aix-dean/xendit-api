@@ -113,7 +113,7 @@ const listInvoicesSchema = Joi.object({
 
 // Webhook schema
 const webhookSchema = Joi.object({
-  event: Joi.string().valid('payment.capture', 'payment.authorization', 'payment.failure').required(),
+  event: Joi.string().valid('payment.capture', 'payment.authorization', 'payment.failure', 'payment.failed', 'payment.succeeded').required(),
   business_id: Joi.string().required(),
   created: Joi.string().isoDate().required(),
   data: Joi.object().required()

@@ -1,14 +1,21 @@
 const admin = require('firebase-admin');
 const logger = require('../utils/logger');
+const fs = require('fs');
+const path = require('path');
 
 // Initialize Firebase Admin SDK
 let db = null;
 
 if (!admin.apps.length) {
   try {
+    // Decode base64 encoded service account key if provided
+    if (process.env.FIREBASE_SA_KEY_B64) {
+      process.env.FIREBASE_SA_KEY = Buffer.from(process.env.FIREBASE_SA_KEY_B64, 'base64').toString();
+    }
+
     // For production, use service account key from environment
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+    if (process.env.FIREBASE_SA_KEY && process.env.FIREBASE_SA_KEY !== '{}' && process.env.FIREBASE_SA_KEY !== '{""}') {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SA_KEY);
 
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
@@ -16,12 +23,24 @@ if (!admin.apps.length) {
       });
       logger.info('Firebase initialized with service account key');
     } else {
-      // For development, use default credentials (if available)
-      // This works if you're running on a machine with Firebase CLI logged in
-      admin.initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || 'oh-app-bcf24'
-      });
-      logger.info('Firebase initialized with default credentials');
+      // Try to load from file
+      const keyFilePath = path.join(__dirname, '..', '..', 'oh-app-bcf24-firebase-adminsdk-s6fxk-bbb4d062b8.json');
+      if (fs.existsSync(keyFilePath)) {
+        const serviceAccount = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
+
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          projectId: serviceAccount.project_id
+        });
+        logger.info('Firebase initialized with service account key from file');
+      } else {
+        // For development, use default credentials (if available)
+        // This works if you're running on a machine with Firebase CLI logged in
+        admin.initializeApp({
+          projectId: process.env.FIREBASE_PROJECT_ID || 'oh-app-bcf24'
+        });
+        logger.info('Firebase initialized with default credentials');
+      }
     }
 
     // Initialize Firestore only if Firebase is properly initialized
@@ -60,21 +79,31 @@ class FirestoreService {
     try {
       const bookingRef = this.db.collection('booking').doc(bookingId);
 
+      // Check if document exists
+      const doc = await bookingRef.get();
+      if (!doc.exists) {
+        logger.warn('Booking document does not exist', { bookingId });
+        return { success: false, bookingId, status, reason: 'Booking not found' };
+      }
+
       // Map Xendit status to your app's status
       const mappedStatus = this.mapXenditStatus(status);
 
-      const updateData = {
-        'transaction.status': mappedStatus,
-        'transaction.updatedAt': admin.firestore.FieldValue.serverTimestamp(),
-        'transaction.paymentId': paymentData.payment_id,
-        'transaction.referenceId': paymentData.reference_id,
-        'transaction.paymentRequestId': paymentData.payment_request_id,
-        'transaction.amount': paymentData.amount,
-        'transaction.currency': paymentData.currency,
-        'transaction.channelCode': paymentData.channel_code,
-        'transaction.failureCode': paymentData.failure_code,
-        'transaction.processedAt': admin.firestore.FieldValue.serverTimestamp()
-      };
+      // Filter out undefined values
+      const updateData = Object.fromEntries(
+        Object.entries({
+          'transaction.status': mappedStatus,
+          'transaction.updatedAt': admin.firestore.FieldValue.serverTimestamp(),
+          'transaction.paymentId': paymentData.payment_id,
+          'transaction.referenceId': paymentData.reference_id,
+          'transaction.paymentRequestId': paymentData.payment_request_id,
+          'transaction.amount': paymentData.amount,
+          'transaction.currency': paymentData.currency,
+          'transaction.channelCode': paymentData.channel_code,
+          'transaction.failureCode': paymentData.failure_code,
+          'transaction.processedAt': admin.firestore.FieldValue.serverTimestamp()
+        }).filter(([_, v]) => v !== undefined)
+      );
 
       await bookingRef.update(updateData);
 
@@ -155,6 +184,11 @@ class FirestoreService {
    * @param {object} paymentData - Payment data from webhook
    */
   async createPaymentLog(paymentData) {
+    if (!this.isAvailable()) {
+      logger.warn('Firestore not available - skipping payment log creation', { paymentId: paymentData.payment_id });
+      return null;
+    }
+
     try {
       const paymentLogRef = this.db.collection('payment_logs').doc();
 

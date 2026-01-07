@@ -6,6 +6,15 @@ if [ -f ".env" ]; then
     export $(grep -v '^#' .env | xargs)
 fi
 
+# Load Firebase service account key from file if it exists
+if [ -f "oh-app-bcf24-firebase-adminsdk-s6fxk-bbb4d062b8.json" ] && [ -z "$FIREBASE_SA_KEY" ]; then
+    echo "🔑 Loading Firebase service account key from file..."
+    FIREBASE_SA_KEY=$(cat oh-app-bcf24-firebase-adminsdk-s6fxk-bbb4d062b8.json)
+    # Base64 encode for safe passing to gcloud
+    FIREBASE_SA_KEY_B64=$(echo "$FIREBASE_SA_KEY" | base64 -w 0)
+    export FIREBASE_SA_KEY_B64
+fi
+
 # Configuration
 PROJECT_ID="oh-app-bcf24"
 REPO_URL="asia-southeast1-docker.pkg.dev/$PROJECT_ID/xendit-api-repo"
@@ -23,10 +32,10 @@ if [ -z "$XENDIT_API_KEY" ]; then
     exit 1
 fi
 
-if [ -z "$WEBHOOK_TOKEN" ] || [ "$WEBHOOK_TOKEN" = "your_webhook_callback_token" ]; then
+if [ -z "$WEBHOOK_CALLBACK_TOKEN" ] || [ "$WEBHOOK_CALLBACK_TOKEN" = "your_webhook_callback_token" ]; then
     echo "🔑 Generating secure webhook token..."
-    WEBHOOK_TOKEN=$(openssl rand -hex 32)
-    echo "✅ Generated webhook token: $WEBHOOK_TOKEN"
+    WEBHOOK_CALLBACK_TOKEN=$(openssl rand -hex 32)
+    echo "✅ Generated webhook token: $WEBHOOK_CALLBACK_TOKEN"
     echo "💡 Save this token for Xendit Dashboard configuration"
 fi
 
@@ -107,9 +116,9 @@ gcloud run deploy xendit-api \
   --set-env-vars "XENDIT_API_KEY=$XENDIT_API_KEY" \
   --set-env-vars "XENDIT_BASE_URL=https://api.xendit.co" \
   --set-env-vars "XENDIT_API_VERSION=2024-11-11" \
-  --set-env-vars "WEBHOOK_CALLBACK_TOKEN=$WEBHOOK_TOKEN" \
+  --set-env-vars "WEBHOOK_CALLBACK_TOKEN=$WEBHOOK_CALLBACK_TOKEN" \
   --set-env-vars "FIREBASE_PROJECT_ID=$PROJECT_ID" \
-  --set-env-vars "FIREBASE_SERVICE_ACCOUNT_KEY=$FIREBASE_SA_KEY" \
+  --set-env-vars "FIREBASE_SA_KEY_B64=$FIREBASE_SA_KEY_B64" \
   --set-env-vars "LOG_LEVEL=info" \
   --set-env-vars "RATE_LIMIT_WINDOW_MS=900000" \
   --set-env-vars "RATE_LIMIT_MAX_REQUESTS=100" \
@@ -127,7 +136,7 @@ if [ $? -eq 0 ] && [ -n "$SERVICE_URL" ]; then
     echo ""
     echo "📋 Next steps:"
     echo "1. Set webhook URL in Xendit Dashboard: $SERVICE_URL/api/v1/webhooks"
-    echo "2. Set webhook token in Xendit Dashboard: $WEBHOOK_TOKEN"
+    echo "2. Set webhook token in Xendit Dashboard: $WEBHOOK_CALLBACK_TOKEN"
     echo "3. Test with: ./test-webhook.sh"
     echo ""
     echo "🔧 Useful commands:"

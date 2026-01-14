@@ -33,7 +33,7 @@ curl http://localhost:3000/health
 # ==========================================
 
 # Create Payment Request
-curl -X POST http://localhost:3000/api/v1/payment-requests \
+curl -X POST https://xendit-api-272363630855.asia-southeast1.run.app/api/v1/payment-requests \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: 123e4567-e89b-12d3-a456-426614174002" \
   -d '{

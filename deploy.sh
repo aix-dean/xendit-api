@@ -7,9 +7,9 @@ if [ -f ".env" ]; then
 fi
 
 # Load Firebase service account key from file if it exists
-if [ -f "oh-app-bcf24-firebase-adminsdk-s6fxk-bbb4d062b8.json" ] && [ -z "$FIREBASE_SA_KEY" ]; then
+if [ -f "oh-app-bcf24-firebase-adminsdk-s6fxk-ec88b5841c.json" ] && [ -z "$FIREBASE_SA_KEY" ]; then
     echo "🔑 Loading Firebase service account key from file..."
-    FIREBASE_SA_KEY=$(cat oh-app-bcf24-firebase-adminsdk-s6fxk-bbb4d062b8.json)
+    FIREBASE_SA_KEY=$(cat oh-app-bcf24-firebase-adminsdk-s6fxk-ec88b5841c.json)
     # Base64 encode for safe passing to gcloud
     FIREBASE_SA_KEY_B64=$(echo "$FIREBASE_SA_KEY" | base64 -w 0)
     export FIREBASE_SA_KEY_B64
@@ -78,13 +78,13 @@ gcloud artifacts repositories create xendit-api-repo \
 
 # Build and push
 echo "🐳 Building and pushing Docker image..."
-sudo docker build -t $REPO_URL/xendit-api:latest .
+docker build --platform linux/amd64 -t $REPO_URL/xendit-api:latest .
 gcloud auth configure-docker asia-southeast1-docker.pkg.dev
-sudo docker push $REPO_URL/xendit-api:latest
+docker push $REPO_URL/xendit-api:latest
 
 # Test login
 echo "🔐 Testing Docker authentication..."
-sudo docker login asia-southeast1-docker.pkg.dev || echo "Login test completed"
+docker login asia-southeast1-docker.pkg.dev || echo "Login test completed"
 
 # Check if image exists (with retry for eventual consistency)
 echo "🔍 Verifying image..."
@@ -108,10 +108,11 @@ gcloud run deploy xendit-api \
   --platform managed \
   --region asia-southeast1 \
   --allow-unauthenticated \
-  --port 3000 \
+  --port 8080 \
   --memory 1Gi \
   --cpu 1 \
   --max-instances 10 \
+  --timeout 600 \
   --set-env-vars "NODE_ENV=production" \
   --set-env-vars "XENDIT_API_KEY=$XENDIT_API_KEY" \
   --set-env-vars "XENDIT_BASE_URL=https://api.xendit.co" \
@@ -122,6 +123,9 @@ gcloud run deploy xendit-api \
   --set-env-vars "LOG_LEVEL=info" \
   --set-env-vars "RATE_LIMIT_WINDOW_MS=900000" \
   --set-env-vars "RATE_LIMIT_MAX_REQUESTS=100" \
+  --set-env-vars "JWT_SECRET=$JWT_SECRET" \
+  --set-env-vars "JWT_EXPIRES_IN=$JWT_EXPIRES_IN" \
+  --set-env-vars "JWT_REFRESH_EXPIRES_IN=$JWT_REFRESH_EXPIRES_IN" \
   --set-env-vars "CORS_ORIGIN=*"
 
 # Get service URL

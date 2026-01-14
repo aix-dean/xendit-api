@@ -24,7 +24,7 @@ if (!admin.apps.length) {
       logger.info('Firebase initialized with service account key');
     } else {
       // Try to load from file
-      const keyFilePath = path.join(__dirname, '..', '..', 'oh-app-bcf24-firebase-adminsdk-s6fxk-bbb4d062b8.json');
+      const keyFilePath = path.join(__dirname, '..', '..', '..', 'oh-app-bcf24-firebase-adminsdk-s6fxk-ec88b5841c.json');
       if (fs.existsSync(keyFilePath)) {
         const serviceAccount = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
 
@@ -136,7 +136,6 @@ class FirestoreService {
   mapXenditStatus(xenditStatus) {
     const statusMap = {
       'SUCCEEDED': 'completed',
-      'AUTHORIZED': 'authorized',
       'AUTHORIZED': 'authorized',
       'PENDING': 'pending',
       'FAILED': 'failed',

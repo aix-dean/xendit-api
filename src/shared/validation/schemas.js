@@ -141,8 +141,34 @@ const webhookSchema = Joi.object({
   event: Joi.string().valid('payment.capture', 'payment.authorization', 'payment.failure', 'payment.failed', 'payment.succeeded').required(),
   business_id: Joi.string().required(),
   created: Joi.string().isoDate().required(),
-  data: Joi.object().required()
-});
+  api_version: Joi.string().optional(),
+  data: Joi.object({
+    type: Joi.string().required(),
+    status: Joi.string().required(),
+    country: Joi.string().required(),
+    created: Joi.string().isoDate().required(),
+    updated: Joi.string().isoDate().required(),
+    currency: Joi.string().required(),
+    payment_id: Joi.string().required(),
+    business_id: Joi.string().required(),
+    channel_code: Joi.string().required(),
+    reference_id: Joi.string().required(),
+    capture_method: Joi.string().required(),
+    request_amount: Joi.number().required(),
+    payment_request_id: Joi.string().required(),
+    captures: Joi.array().items(Joi.object({
+      capture_id: Joi.string().required(),
+      capture_amount: Joi.number().required(),
+      capture_timestamp: Joi.string().isoDate().required()
+    })).optional(),
+    payment_details: Joi.object({
+      payer_name: Joi.string().allow(null, '').optional(),
+      receipt_id: Joi.string().allow(null, '').optional(),
+      issuer_name: Joi.string().allow(null, '').optional()
+    }).optional(),
+    failure_code: Joi.string().optional()
+  }).required()
+}).unknown();
 
 module.exports = {
   createPaymentRequestSchema,

@@ -8,12 +8,29 @@ const logger = require('./shared/utils/logger');
 const errorHandler = require('./shared/middleware/errorHandler');
 const idempotencyMiddleware = require('./shared/middleware/idempotency');
 
-// Import feature routes
-const authRoutes = require('./features/auth');
-const paymentRoutes = require('./features/payments');
-const paymentRequestRoutes = require('./features/payment-requests');
-const invoiceRoutes = require('./features/invoices');
-const webhookRoutes = require('./features/webhooks');
+// Log startup information
+logger.info('Starting Xendit API server...', {
+  nodeEnv: process.env.NODE_ENV,
+  port: process.env.PORT || 8080,
+  hasXenditKey: !!process.env.XENDIT_API_KEY,
+  hasWebhookToken: !!process.env.WEBHOOK_CALLBACK_TOKEN,
+  hasFirebaseKey: !!(process.env.FIREBASE_SA_KEY || process.env.FIREBASE_SA_KEY_B64)
+});
+
+// Import feature routes (with error handling)
+let authRoutes, paymentRoutes, paymentRequestRoutes, invoiceRoutes, webhookRoutes;
+
+try {
+  authRoutes = require('./features/auth');
+  paymentRoutes = require('./features/payments');
+  paymentRequestRoutes = require('./features/payment-requests');
+  invoiceRoutes = require('./features/invoices');
+  webhookRoutes = require('./features/webhooks');
+  logger.info('All route modules loaded successfully');
+} catch (error) {
+  logger.error('Failed to load route modules', { error: error.message, stack: error.stack });
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -81,9 +98,70 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`, { environment: process.env.NODE_ENV });
+// Start server with error handling
+const server = app.listen(PORT, '0.0.0.0', (error) => {
+  if (error) {
+    logger.error('Failed to start server', {
+      error: error.message,
+      stack: error.stack,
+      port: PORT
+    });
+    process.exit(1);
+  }
+  logger.info(`Server running on port ${PORT}`, {
+    environment: process.env.NODE_ENV,
+    pid: process.pid,
+    uptime: process.uptime()
+  });
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    logger.error(`Port ${PORT} is already in use`, { port: PORT });
+  } else {
+    logger.error('Server error', { error: error.message, stack: error.stack });
+  }
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully...');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully...');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught exception', {
+    error: error.message,
+    stack: error.stack
+  });
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled rejection', {
+    reason: reason,
+    promise: promise
+  });
+  server.close(() => {
+    process.exit(1);
+  });
 });
 
 module.exports = app;

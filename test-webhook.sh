@@ -4,7 +4,7 @@
 # This script sends test webhook payloads to your local API
 
 BASE_URL="http://localhost:3000/api/v1"
-WEBHOOK_TOKEN="your_webhook_token_here"
+WEBHOOK_TOKEN="KYLrHFV803ZpBqQK0W9fgMOifTtVBF6cqBzPyEuhnNRiQ75W"
 
 echo "🔔 Testing Xendit Payment Webhooks"
 echo "=================================="

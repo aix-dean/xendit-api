@@ -1,53 +1,21 @@
 const admin = require('firebase-admin');
 const logger = require('../utils/logger');
-const fs = require('fs');
-const path = require('path');
 
-// Initialize Firebase Admin SDK
+// Initialize Firebase Admin SDK with Application Default Credentials
 let db = null;
 
 if (!admin.apps.length) {
   try {
-    // Decode base64 encoded service account key if provided
-    if (process.env.FIREBASE_SA_KEY_B64) {
-      process.env.FIREBASE_SA_KEY = Buffer.from(process.env.FIREBASE_SA_KEY_B64, 'base64').toString();
-    }
-
-    // For production, use service account key from environment
-    if (process.env.FIREBASE_SA_KEY && process.env.FIREBASE_SA_KEY !== '{}' && process.env.FIREBASE_SA_KEY !== '{""}') {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SA_KEY);
-
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId: serviceAccount.project_id
-      });
-      logger.info('Firebase initialized with service account key');
-    } else {
-      // Try to load from file
-      const keyFilePath = path.join(__dirname, '..', '..', '..', 'oh-app-bcf24-firebase-adminsdk-s6fxk-ec88b5841c.json');
-      if (fs.existsSync(keyFilePath)) {
-        const serviceAccount = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
-
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-          projectId: serviceAccount.project_id
-        });
-        logger.info('Firebase initialized with service account key from file');
-      } else {
-        // For development, use default credentials (if available)
-        // This works if you're running on a machine with Firebase CLI logged in
-        admin.initializeApp({
-          projectId: process.env.FIREBASE_PROJECT_ID || 'oh-app-bcf24'
-        });
-        logger.info('Firebase initialized with default credentials');
-      }
-    }
-
-    // Initialize Firestore only if Firebase is properly initialized
+    logger.info('Initializing Firebase with Application Default Credentials...');
+    admin.initializeApp({
+      projectId: process.env.FIREBASE_PROJECT_ID || 'oh-app-bcf24'
+    });
+    
     db = admin.firestore();
-    logger.info('Firestore initialized successfully');
+    logger.info('Firebase and Firestore initialized successfully');
+    
   } catch (error) {
-    logger.error('Failed to initialize Firebase/Firestore', { error: error.message });
+    logger.error('Failed to initialize Firebase/Firestore', { error: error.message, stack: error.stack });
     logger.warn('Firestore functionality will be disabled - check Firebase credentials');
   }
 }

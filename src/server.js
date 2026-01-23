@@ -14,7 +14,7 @@ logger.info('Starting Xendit API server...', {
   port: process.env.PORT || 8080,
   hasXenditKey: !!process.env.XENDIT_API_KEY,
   hasWebhookToken: !!process.env.WEBHOOK_CALLBACK_TOKEN,
-  hasFirebaseKey: !!(process.env.FIREBASE_SA_KEY || process.env.FIREBASE_SA_KEY_B64)
+  hasFirebaseProject: !!process.env.FIREBASE_PROJECT_ID
 });
 
 // Import feature routes (with error handling)
@@ -34,6 +34,12 @@ try {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Trust proxy for Cloud Run (only trust Google's infrastructure)
+app.set('trust proxy', function (ip) {
+  // Trust Cloud Run load balancer IPs
+  return ip === '127.0.0.1' || ip === '::1' || ip.startsWith('10.') || ip.startsWith('172.16.') || ip.startsWith('192.168.');
+});
 
 // Security middleware
 app.use(helmet());

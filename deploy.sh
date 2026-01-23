@@ -6,15 +6,6 @@ if [ -f ".env" ]; then
     export $(grep -v '^#' .env | xargs)
 fi
 
-# Load Firebase service account key from file if it exists
-if [ -f "oh-app-bcf24-firebase-adminsdk-s6fxk-ec88b5841c.json" ] && [ -z "$FIREBASE_SA_KEY" ]; then
-    echo "🔑 Loading Firebase service account key from file..."
-    FIREBASE_SA_KEY=$(cat oh-app-bcf24-firebase-adminsdk-s6fxk-ec88b5841c.json)
-    # Base64 encode for safe passing to gcloud
-    FIREBASE_SA_KEY_B64=$(echo "$FIREBASE_SA_KEY" | base64 -w 0)
-    export FIREBASE_SA_KEY_B64
-fi
-
 # Configuration
 PROJECT_ID="oh-app-bcf24"
 REPO_URL="asia-southeast1-docker.pkg.dev/$PROJECT_ID/xendit-api-repo"
@@ -119,7 +110,6 @@ gcloud run deploy xendit-api \
   --set-env-vars "XENDIT_API_VERSION=2024-11-11" \
   --set-env-vars "WEBHOOK_CALLBACK_TOKEN=$WEBHOOK_CALLBACK_TOKEN" \
   --set-env-vars "FIREBASE_PROJECT_ID=$PROJECT_ID" \
-  --set-env-vars "FIREBASE_SA_KEY_B64=$FIREBASE_SA_KEY_B64" \
   --set-env-vars "LOG_LEVEL=info" \
   --set-env-vars "RATE_LIMIT_WINDOW_MS=900000" \
   --set-env-vars "RATE_LIMIT_MAX_REQUESTS=100" \

@@ -79,7 +79,9 @@ router.get('/:webhookId', (req, res) => {
 router.post('/', verifyWebhook, validate(webhookSchema), async (req, res, next) => {
   try {
     const { event, business_id, created, data } = req.body;
-    const webhookId = req.headers['webhook-id'] || `${event}-${data.payment_id}-${created}`;
+    // Generate webhook ID - use payment_id/capture_id (id) if available, otherwise use payment_request_id or reference_id
+    const identifier = data.payment_id || data.id || data.payment_request_id || data.reference_id;
+    const webhookId = req.headers['webhook-id'] || `${event}-${identifier}-${created}`;
 
     logger.info('Received webhook', {
       webhookId,
@@ -87,9 +89,11 @@ router.post('/', verifyWebhook, validate(webhookSchema), async (req, res, next) 
       businessId: business_id,
       created,
       paymentId: data.payment_id,
+      captureId: data.id,
       paymentRequestId: data.payment_request_id,
+      referenceId: data.reference_id,
       status: data.status,
-      amount: data.amount,
+      amount: data.amount || data.captured_amount || data.request_amount,
       currency: data.currency
     });
 
@@ -111,7 +115,8 @@ router.post('/', verifyWebhook, validate(webhookSchema), async (req, res, next) 
       message: 'Webhook processed successfully',
       webhookId: result.webhookId,
       event,
-      status: data.status
+      status: data.status,
+      referenceId: data.reference_id
     });
 
   } catch (error) {

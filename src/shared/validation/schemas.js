@@ -136,26 +136,42 @@ const listInvoicesSchema = Joi.object({
   recurring_payment_id: Joi.string().optional()
 });
 
-// Webhook schema
+// Webhook schema - supports both payment and payment_request events
 const webhookSchema = Joi.object({
-  event: Joi.string().valid('payment.capture', 'payment.authorization', 'payment.failure', 'payment.failed', 'payment.succeeded').required(),
+  event: Joi.string().valid(
+    // Payment events
+    'payment.capture',
+    'payment.authorization',
+    'payment.failure',
+    'payment.failed',
+    'payment.succeeded',
+    // Capture events
+    'capture.succeeded',
+    // Payment Request events
+    'payment_request.expiry',
+    'payment_request.succeeded',
+    'payment_request.failed'
+  ).required(),
   business_id: Joi.string().required(),
   created: Joi.string().isoDate().required(),
   api_version: Joi.string().optional(),
   data: Joi.object({
-    type: Joi.string().required(),
+    // Common fields
+    type: Joi.string().allow(null, '').optional(),
     status: Joi.string().required(),
-    country: Joi.string().required(),
-    created: Joi.string().isoDate().required(),
-    updated: Joi.string().isoDate().required(),
-    currency: Joi.string().required(),
-    payment_id: Joi.string().required(),
-    business_id: Joi.string().required(),
-    channel_code: Joi.string().required(),
+    country: Joi.string().allow(null, '').optional(),
+    created: Joi.string().isoDate().allow(null, '').optional(),
+    updated: Joi.string().isoDate().allow(null, '').optional(),
+    currency: Joi.string().allow(null, '').optional(),
+    business_id: Joi.string().allow(null, '').optional(),
+    channel_code: Joi.string().allow(null, '').optional(),
     reference_id: Joi.string().required(),
-    capture_method: Joi.string().required(),
-    request_amount: Joi.number().required(),
-    payment_request_id: Joi.string().required(),
+    capture_method: Joi.string().allow(null, '').optional(),
+    request_amount: Joi.number().allow(null).optional(),
+    payment_request_id: Joi.string().allow(null, '').optional(),
+    
+    // Payment-specific fields (optional for payment_request events)
+    payment_id: Joi.string().allow(null, '').optional(),
     captures: Joi.array().items(Joi.object({
       capture_id: Joi.string().required(),
       capture_amount: Joi.number().required(),
@@ -166,8 +182,28 @@ const webhookSchema = Joi.object({
       receipt_id: Joi.string().allow(null, '').optional(),
       issuer_name: Joi.string().allow(null, '').optional()
     }).optional(),
-    failure_code: Joi.string().optional()
-  }).required()
+    payment_detail: Joi.object().allow(null).optional(), // Alternative field name, can be null
+    failure_code: Joi.string().allow(null, '').optional(),
+    
+    // Payment Request-specific fields (optional for payment events)
+    description: Joi.string().allow(null, '').optional(),
+    customer_id: Joi.string().allow(null, '').optional(),
+    channel_properties: Joi.object().allow(null).optional(),
+    actions: Joi.array().allow(null).optional(),
+    amount: Joi.number().allow(null).optional(),
+    
+    // Additional fields that Xendit might send
+    id: Joi.string().optional(), // Can be payment_id, capture_id, etc.
+    payment_method: Joi.alternatives().try(
+      Joi.string(),
+      Joi.object().unknown(true) // Can be a complex object with nested properties
+    ).optional(),
+    metadata: Joi.object().allow(null).optional(),
+    
+    // Capture-specific fields
+    authorized_amount: Joi.number().allow(null).optional(),
+    captured_amount: Joi.number().allow(null).optional()
+  }).required().unknown(true) // Allow additional fields in data object
 }).unknown();
 
 module.exports = {

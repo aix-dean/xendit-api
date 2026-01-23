@@ -86,8 +86,30 @@ class FirestoreService {
         return { success: false, bookingId, status, reason: 'Booking not found' };
       }
 
+      // Get booking data to check conditions
+      const bookingData = doc.data();
+      const payLater = bookingData.payLater;
+      const url = bookingData.url || '';
+
       // Map Xendit status to your app's status
       const mappedStatus = this.mapXenditStatus(status);
+
+      // Determine booking.status based on conditions
+      // Only update booking.status if payment is successfully processed
+      let bookingStatus = null;
+      const isPaymentSuccessful = status === 'SUCCEEDED' || mappedStatus === 'completed';
+      
+      if (isPaymentSuccessful) {
+        const isPayLaterFalseOrNull = payLater === false || payLater === null || payLater === undefined;
+        
+        if (isPayLaterFalseOrNull && (!url || url.trim() === '')) {
+          // Condition 1: payLater == false/null AND url is empty → 'Content Pending'
+          bookingStatus = 'Content Pending';
+        } else if (mappedStatus === 'pending' && isPayLaterFalseOrNull && url && url.trim() !== '') {
+          // Condition 2: status == 'pending' AND payLater == false/null AND url is not empty → 'Processing'
+          bookingStatus = 'Processing';
+        }
+      }
 
       // Filter out undefined values
       const updateData = Object.fromEntries(
@@ -101,7 +123,8 @@ class FirestoreService {
           'transaction.currency': paymentData.currency,
           'transaction.channelCode': paymentData.channel_code,
           'transaction.failureCode': paymentData.failure_code,
-          'transaction.processedAt': admin.firestore.FieldValue.serverTimestamp()
+          'transaction.processedAt': admin.firestore.FieldValue.serverTimestamp(),
+          ...(bookingStatus && { 'status': bookingStatus })
         }).filter(([_, v]) => v !== undefined)
       );
 
@@ -111,8 +134,11 @@ class FirestoreService {
         bookingId,
         xenditStatus: status,
         mappedStatus,
+        bookingStatus: bookingStatus || 'unchanged',
         paymentId: paymentData.payment_id,
-        referenceId: paymentData.reference_id
+        referenceId: paymentData.reference_id,
+        payLater,
+        url: url ? 'present' : 'empty'
       });
 
       return { success: true, bookingId, status: mappedStatus };
